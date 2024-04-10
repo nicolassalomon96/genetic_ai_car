@@ -3,10 +3,10 @@ import sys
 import math
 import pygame
 import neat
-from utils import *
+from utils import scale_image
 from car import Car
 
-track = pygame.image.load(r'images\easy_track_with_grass_1.png')
+track = pygame.image.load(r'images\track_2.png')
 red_car = pygame.image.load(r'images\car_f1.png')
 
 width, height = track.get_width(), track.get_height()
