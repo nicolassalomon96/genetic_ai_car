@@ -1,9 +1,6 @@
 import pygame
 import math
 
-car_velocity = 3
-car_downscaling = 0.025
-
 class Car(pygame.sprite.Sprite):
     def __init__(self, car, window):
         super().__init__()
@@ -13,37 +10,44 @@ class Car(pygame.sprite.Sprite):
         self.original_car = car
         self.image = self.original_car
         self.rect = self.image.get_rect(center=(425, 460))
+        self.car_velocity = 4
+        self.car_downscaling = 0.025 #Downscaling factor to show the car on the track
         self.drive_state = False
         self.velocity_vector = pygame.math.Vector2(0.7, 0) #x and y velocity
-        self.steering_angle = 0
-        self.rotation_velocity = 2
+        self.steering_angle = 0 
+        self.rotation_velocity = 3
         self.direction = 0 # Turn left: -1; Turn right: 1
         self.radar_angles = (-90, -45, 0, 45, 90)
         self.radars_data = []
         self.crashed = False
 
     def update(self):
-        self.radars_data.clear()
-        self.drive()
-        self.rotate()
+        #Update the state of each car every loop
+        self.radars_data.clear() #Clean radars data
+        self.drive() 
+        self.rotate() 
         for radar_angle in self.radar_angles:
-            self.radar(radar_angle)
-        self.collision()
+            self.radar(radar_angle) 
+        self.collision() 
+        
         #print(self.radars_data)
         #print("NEW UPDATE")    
 
     def drive(self):
+        #Allow driving the car when self.drive_state is set to True.
+        #Moves the center of the car a certain amount of pixels according to velocity_vector and car_velocity
         if self.drive_state:
-            self.rect.center += self.velocity_vector * car_velocity
+            self.rect.center += self.velocity_vector * self.car_velocity
     
     def collision(self):
-        length = 22 #Distance between the center of the car and the collision point
-        right_collition_point = [int(self.rect.center[0] + math.cos(math.radians(self.steering_angle + 18)) * length),
-                                 int(self.rect.center[1] - math.sin(math.radians(self.steering_angle + 18)) * length)]
-        left_collition_point = [int(self.rect.center[0] + math.cos(math.radians(self.steering_angle - 18)) * length),
-                                 int(self.rect.center[1] - math.sin(math.radians(self.steering_angle - 18)) * length)]
-        
-        #DIE WHEN COLLISION
+        #Detect when two points of the car collide with the track border (it must be black [0,0,0])
+        length = 22 #Distance between the center of the car and the car collision point
+        collision_angle = 18 #Angle from the center of the car to the car collision point
+        right_collition_point = [int(self.rect.center[0] + math.cos(math.radians(self.steering_angle + collision_angle)) * length),
+                                 int(self.rect.center[1] - math.sin(math.radians(self.steering_angle + collision_angle)) * length)]
+        left_collition_point = [int(self.rect.center[0] + math.cos(math.radians(self.steering_angle - collision_angle)) * length),
+                                 int(self.rect.center[1] - math.sin(math.radians(self.steering_angle - collision_angle)) * length)]
+
         try:
             if self.window.get_at(right_collition_point) == pygame.Color(0,0,0) or self.window.get_at(left_collition_point) == pygame.Color(0,0,0):
                 self.crashed = True
@@ -51,12 +55,13 @@ class Car(pygame.sprite.Sprite):
         except:
             print("Error: car outside of playing area")
         
-        #DRAW COLLISION POINT
+        #Draw collision points
         pygame.draw.circle(self.window, (0, 255, 255, 0), right_collition_point, 3)
         pygame.draw.circle(self.window, (0, 255, 255, 0), left_collition_point, 3)
 
 
     def rotate(self):
+        #Rotate the car according to self.direction
         if self.direction == 1:
             self.steering_angle -= self.rotation_velocity
             self.velocity_vector.rotate_ip(self.rotation_velocity)
@@ -64,11 +69,12 @@ class Car(pygame.sprite.Sprite):
             self.steering_angle += self.rotation_velocity
             self.velocity_vector.rotate_ip(-self.rotation_velocity)
         
-        self.image = pygame.transform.rotozoom(self.original_car, self.steering_angle, car_downscaling)
-        self.rect = self.image.get_rect(center=self.rect.center)
+        self.image = pygame.transform.rotozoom(self.original_car, self.steering_angle, self.car_downscaling) #Image rotation
+        self.rect = self.image.get_rect(center=self.rect.center) #Update car rectangle center
 
-    def radar(self, radar_angle):    
-        lenght = 0
+    def radar(self, radar_angle):
+        #Get each radar measurements    
+        lenght = 0 #Step to the object
         x = int(self.rect.center[0])
         y = int(self.rect.center[1])
 
@@ -82,10 +88,11 @@ class Car(pygame.sprite.Sprite):
                 #Set a max_distance to measure
             #    break
         
-        distance = lenght
-        #distance = round(math.sqrt((x - self.rect.center[0])**2 + (y - self.rect.center[1])**2),2)
-        self.radars_data.append([radar_angle, distance])   
-        #DRAW RADAR
+        #distance = lenght
+        distance = int(math.sqrt((x - self.rect.center[0])**2 + (y - self.rect.center[1])**2))
+        self.radars_data.append([radar_angle, distance])
+        
+        #Draw radar lines
         pygame.draw.line(self.window, (255,255,255,255), self.rect.center, (x, y), 1)
         pygame.draw.circle(self.window, (0, 255, 0, 0), (x, y), 3)
         

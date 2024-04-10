@@ -1,21 +1,22 @@
-import os
-import sys
-import math
+#import os
+#import sys
+#import math
 import pygame
-import neat
+#import neat
 from utils import scale_image
 from car import Car
 
-track = pygame.image.load(r'images\track_2.png')
+track = pygame.image.load(r'images\track_1.png')
 red_car = pygame.image.load(r'images\car_f1.png')
 
 width, height = track.get_width(), track.get_height()
 window = pygame.display.set_mode((width, height))
 pygame.display.set_caption("GENETIC AI CAR")
 
-car = pygame.sprite.GroupSingle(Car(red_car, window))
+car = pygame.sprite.GroupSingle(Car(red_car, window)) #The Sprite class in Pygame is a container class that holds all the attributes and behaviors of a game character.
+                                                      #It derives from Pygame's Surface class, which represents an image with a fixed width and height.
 
-def eval_genomes():
+def eval():
     run = True
     while run:
         for event in pygame.event.get():
@@ -44,5 +45,5 @@ def eval_genomes():
         car.update()
         pygame.display.update()
 
-eval_genomes()
+eval()
 
