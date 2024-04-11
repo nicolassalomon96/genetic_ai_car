@@ -3,7 +3,7 @@
 #import math
 import pygame
 #import neat
-from utils import scale_image
+#from utils import scale_image
 from car import Car
 
 track_number = 1

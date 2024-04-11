@@ -9,16 +9,29 @@ class Car(pygame.sprite.Sprite):
         self.height = self.window.get_height()
         self.original_car = car
         self.image = self.original_car
-        self.car_velocity = 3
+        self.car_velocity = 4
         self.car_downscaling = 0.025 #Downscaling factor to show the car on the track
         self.drive_state = False
-        
-        if track_number == 1: #Rotate the car according to track finish line orientation
-            self.rect = self.image.get_rect(center=(425, 460))
+
+        #Rotate and place the car according to track finish line orientation
+        if track_number == 1: 
+            self.rect = self.image.get_rect(center=(516, 553))
             self.velocity_vector = pygame.math.Vector2(0.7, 0) #x and y velocity
             self.steering_angle = 0
         elif track_number == 2:
             self.rect = self.image.get_rect(center=(195, 263))
+            self.velocity_vector = pygame.math.Vector2(0, -0.7) #x and y velocity
+            self.steering_angle = 90
+        elif track_number == 3:
+            self.rect = self.image.get_rect(center=(506,840))
+            self.velocity_vector = pygame.math.Vector2(0.7, 0) #x and y velocity
+            self.steering_angle = 0
+        elif track_number == 4:
+            self.rect = self.image.get_rect(center=(318, 81))
+            self.velocity_vector = pygame.math.Vector2(0.7, 0) #x and y velocity
+            self.steering_angle = 0
+        elif track_number == 5:
+            self.rect = self.image.get_rect(center=(78, 302))
             self.velocity_vector = pygame.math.Vector2(0, -0.7) #x and y velocity
             self.steering_angle = 90
 
@@ -80,7 +93,7 @@ class Car(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.rect.center) #Update car rectangle center
 
     def radar(self, radar_angle):
-        #Get each radar measurements    
+        #Get each radar measurements with a simple ray-cast algorithm    
         lenght = 0 #Step to the object
         x = int(self.rect.center[0])
         y = int(self.rect.center[1])
