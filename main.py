@@ -6,14 +6,15 @@ import pygame
 from utils import scale_image
 from car import Car
 
-track = pygame.image.load(r'images\track_1.png')
+track_number = 1
+track = pygame.image.load(rf'images\track_{track_number}.png')
 red_car = pygame.image.load(r'images\car_f1.png')
 
 width, height = track.get_width(), track.get_height()
 window = pygame.display.set_mode((width, height))
 pygame.display.set_caption("GENETIC AI CAR")
 
-car = pygame.sprite.GroupSingle(Car(red_car, window)) #The Sprite class in Pygame is a container class that holds all the attributes and behaviors of a game character.
+car = pygame.sprite.GroupSingle(Car(red_car, window, track_number)) #The Sprite class in Pygame is a container class that holds all the attributes and behaviors of a game character.
                                                       #It derives from Pygame's Surface class, which represents an image with a fixed width and height.
 
 def eval():

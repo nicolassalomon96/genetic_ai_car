@@ -2,19 +2,26 @@ import pygame
 import math
 
 class Car(pygame.sprite.Sprite):
-    def __init__(self, car, window):
+    def __init__(self, car, window, track_number):
         super().__init__()
         self.window = window
         self.width = self.window.get_width()
         self.height = self.window.get_height()
         self.original_car = car
         self.image = self.original_car
-        self.rect = self.image.get_rect(center=(425, 460))
-        self.car_velocity = 4
+        self.car_velocity = 3
         self.car_downscaling = 0.025 #Downscaling factor to show the car on the track
         self.drive_state = False
-        self.velocity_vector = pygame.math.Vector2(0.7, 0) #x and y velocity
-        self.steering_angle = 0 
+        
+        if track_number == 1: #Rotate the car according to track finish line orientation
+            self.rect = self.image.get_rect(center=(425, 460))
+            self.velocity_vector = pygame.math.Vector2(0.7, 0) #x and y velocity
+            self.steering_angle = 0
+        elif track_number == 2:
+            self.rect = self.image.get_rect(center=(195, 263))
+            self.velocity_vector = pygame.math.Vector2(0, -0.7) #x and y velocity
+            self.steering_angle = 90
+
         self.rotation_velocity = 3
         self.direction = 0 # Turn left: -1; Turn right: 1
         self.radar_angles = (-90, -45, 0, 45, 90)
