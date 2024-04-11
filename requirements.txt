@@ -1,0 +1,4 @@
+neat-python==0.92
+pygame==2.5.2
+setuptools==68.2.2
+wheel==0.41.2
