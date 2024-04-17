@@ -5,8 +5,9 @@ import pygame
 import neat
 #from utils import scale_image
 from car_ai import Car
+import pickle
 
-track_number = 1
+track_number = 2
 track = pygame.image.load(rf'images\track_{track_number}.png')
 red_car = pygame.image.load(r'images\car_f1.png')
 
@@ -39,31 +40,46 @@ def eval_genomes(genomes, config):
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                run = False
-        
+                #run = False #End the generation when closing the window 
+                quit() #End the program when closing the window
+
         window.blit(track, (0,0))
 
         if len(cars) == 0:
             break
-    
+
+        #Update distance traveled and fitness or remove the car
         for i, car in enumerate(cars):
-            ge[i].fitness += 1
+            
+            car.sprite.update_distance_traveled()
+            #print(car.sprite.distance_travelled)
+
+            ge[i].fitness += (1 + car.sprite.distance_travelled*0.01) #Consider time and distance travelled by the car adjusted by a factor of 0.01
+            #ge[i].fitness += 1 #Only consider time metric
+            
             if car.sprite.crashed:
                 remove(i)
-        
+                
+
         for i, car in enumerate(cars):
-            '''
+            
+            #Try to use 2 outputs: (left or right) and throttle
             output = nets[i].activate(car.sprite.data())
-            if output[0] >= 0.5:
+            if output[0] > 0.5:
                 car.sprite.direction = 1
-            elif output[0] <= 0.5:
+            elif output[0] < -0.5:
                 car.sprite.direction = -1
-            else:
+            elif output[0] <= 0.5 and output[0] >= -0.5:
                 car.sprite.direction = 0
             
-            car.sprite.car_velocity = output[1]
-            #print(output)
+            car.sprite.car_velocity = ((output[1] + 1) / 2) * car.sprite.max_car_velocity #output[1] scaled from tanh to [0, 6]
+            if car.sprite.car_velocity == 0:
+                ge[i].fitness = 0
+                remove(i)
+            #print(car.sprite.car_velocity)
+
             '''
+            #Original using only 2 output (left, right) and a constant throttle
             output = nets[i].activate(car.sprite.data())
             if output[0] > 0.7:
                 car.sprite.direction = 1
@@ -71,8 +87,16 @@ def eval_genomes(genomes, config):
                 car.sprite.direction = -1
             if output[0] <= 0.7 and output[1] <= 0.7:
                 car.sprite.direction = 0
-            '''
+            
+
+            #Try to use 3 outputs: left, right and throttle
             output = nets[i].activate(car.sprite.data())
+            #print(output)
+
+            output_vel_scaled = ((output[2] + 1) / 2) * 6
+            print(output_vel_scaled)
+
+
             if output[0] > 0.7:
                 car.sprite.direction = 1
             if output[1] > 0.7:
@@ -80,10 +104,11 @@ def eval_genomes(genomes, config):
             if output[0] <= 0.7 and output[1] <= 0.7:
                 car.sprite.direction = 0
             if output[2] > 0:
-                car.sprite.car_velocity = output[2]
+                car.sprite.car_velocity = output_vel_scaled #output[2]
             else:
-                car.sprite.car_velocity = 0
+                car.sprite.car_velocity = 1
             '''
+
         #UPDATE
         for car in cars:
             car.draw(window)
@@ -91,7 +116,7 @@ def eval_genomes(genomes, config):
         pygame.display.update()
 
 #Setup NEAT Neural Network
-def run(config_path):
+def run(config_path, resume=False):
     global pop
     config = neat.config.Config(
         neat.DefaultGenome,
@@ -101,17 +126,21 @@ def run(config_path):
         config_path
     )
 
-    pop = neat.Population(config)
-
+    if resume:
+        pop = neat.Checkpointer.restore_checkpoint(r'checkpoints\neat-checkpoint-4')
+    else:
+        pop = neat.Population(config)
     pop.add_reporter(neat.StdOutReporter(True))
     stats = neat.StatisticsReporter()
     pop.add_reporter(stats)
+    pop.add_reporter(neat.Checkpointer(1, filename_prefix=r'checkpoints\neat-checkpoint-'))
 
-    pop.run(eval_genomes, 50)
-
+    winner = pop.run(eval_genomes, 50)
+    with open("best.pickel", "wb") as f:
+        pickle.dump(winner, f)
 
 if __name__ == '__main__':
     local_dir = os.path.dirname(__file__)
     config_path = os.path.join(local_dir, 'neat_config.txt')
-    run(config_path)
+    run(config_path, resume=False)
 

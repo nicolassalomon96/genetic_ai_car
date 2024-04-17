@@ -9,7 +9,8 @@ class Car(pygame.sprite.Sprite):
         self.height = self.window.get_height()
         self.original_car = car
         self.image = self.original_car
-        self.car_velocity = 5
+        self.max_car_velocity = 6
+        self.car_velocity = 0
         self.car_downscaling = 0.025 #Downscaling factor to show the car on the track
 
         #Rotate and place the car according to track finish line orientation
@@ -40,6 +41,11 @@ class Car(pygame.sprite.Sprite):
         self.radars_data = []
         self.crashed = False
 
+        #Atributtes used for travelled distance calculation
+        self.distance_travelled = 0
+        self.prev_pos_x = int(self.rect.center[0])
+        self.prev_pos_y =  int(self.rect.center[1])
+
     def update(self):
         #Update the state of each car every loop
         self.radars_data.clear() #Clean radars data
@@ -57,6 +63,7 @@ class Car(pygame.sprite.Sprite):
         #Allow driving the car when self.drive_state is set to True.
         #Moves the center of the car a certain amount of pixels according to velocity_vector and car_velocity
         #if self.drive_state:
+        #self.rect.center += self.velocity_vector * self.max_car_velocity
         self.rect.center += self.velocity_vector * self.car_velocity
     
     def collision(self):
@@ -125,4 +132,9 @@ class Car(pygame.sprite.Sprite):
         for i, radar in enumerate(self.radars_data):
             input[i] = int(radar[1])
         return input
+
+    def update_distance_traveled(self):
+        self.distance_travelled += int(math.sqrt((self.prev_pos_x - self.rect.center[0])**2 + (self.prev_pos_y - self.rect.center[1])**2))
+        self.prev_pos_x = self.rect.center[0]
+        self.prev_pos_y = self.rect.center[1]
 
