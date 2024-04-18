@@ -63,8 +63,9 @@ class Car(pygame.sprite.Sprite):
         #Allow driving the car when self.drive_state is set to True.
         #Moves the center of the car a certain amount of pixels according to velocity_vector and car_velocity
         #if self.drive_state:
-        self.rect.center += self.velocity_vector * self.max_car_velocity
-        #self.rect.center += self.velocity_vector * self.car_velocity
+
+        #self.rect.center += self.velocity_vector * self.max_car_velocity
+        self.rect.center += self.velocity_vector * self.car_velocity
     
     def collision(self):
         #Detect when two points of the car collide with the track border (it must be black [0,0,0])
