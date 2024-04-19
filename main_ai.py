@@ -21,7 +21,7 @@ def save_best():
         pickle.dump(best, f)
 
 def eval_genomes(genomes, config):
-    global cars, ge, nets, all_cars_vel
+    global cars, ge, nets
 
     cars = []
     ge = []
@@ -47,6 +47,7 @@ def eval_genomes(genomes, config):
                 #print(f'Best saved: {best}')
                 quit() #End the program when closing the window
 
+        #When pressing 'q', finish the current generation, save the state into a .pickle and begins a new generation
         keyState = pygame.key.get_pressed()   
         if keyState[pygame.K_q]:
             pygame.time.wait(500)
@@ -54,9 +55,7 @@ def eval_genomes(genomes, config):
         pygame.event.pump() # process event queue
 
         window.blit(track, (0,0))
-        #all_cars_vel = 0
         for i, car in enumerate(cars):
-            #all_cars_vel += car.sprite.car_velocity 
             breaker = False
             if car.sprite.completed_lap and car.sprite.stop:
                 #car.sprite.crashed = True
@@ -82,9 +81,6 @@ def eval_genomes(genomes, config):
                 car.sprite.car_velocity = ((output[1] + 1) / 2) * car.sprite.max_car_velocity #output[1] scaled from tanh to [0, max_car_velocity]
                 
                 ge[i].fitness += 1 #Only consider time metric. Ver de multiplicar por la ""inversa"" de la cantidad de pesos (mas pesos, menos fitness)
-                  
-        #if all_cars_vel == 0:
-        #    breaker = True
         
         if breaker:
             break     
