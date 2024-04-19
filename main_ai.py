@@ -1,3 +1,5 @@
+#AL PRESIONAR LA LETRA 'Q' FINALIZA LA GENERACIÓ, GUARDA EL MEJOR INDIVIDUO Y PASA A LA GENERACIÓN SIGUIENTE
+
 import os
 import pygame
 import neat
@@ -6,14 +8,20 @@ from car_ai import Car
 import pickle
 import argparse
 
+FPS = 60
+
 def remove(index):
     cars.pop(index)
     ge.pop(index)
     nets.pop(index)
 
+def save_best():
+    best = pop.best_genome
+    with open("best.pickle", "wb") as f:
+        pickle.dump(best, f)
 
 def eval_genomes(genomes, config):
-    global cars, ge, nets
+    global cars, ge, nets, all_cars_vel
 
     cars = []
     ge = []
@@ -26,6 +34,7 @@ def eval_genomes(genomes, config):
         net = neat.nn.FeedForwardNetwork.create(genome, config)
         nets.append(net)
         genome.fitness = 0
+    clock = pygame.time.Clock()
 
     run = True
     while run:
@@ -38,37 +47,49 @@ def eval_genomes(genomes, config):
                 #print(f'Best saved: {best}')
                 quit() #End the program when closing the window
 
-        window.blit(track, (0,0))
+        keyState = pygame.key.get_pressed()   
+        if keyState[pygame.K_q]:
+            pygame.time.wait(500)
+            run = False
+        pygame.event.pump() # process event queue
 
-        if len(cars) == 0:
-            #Si da 2 vueltas vel --> 0 y bandera de que llegó
-            #Si choca vel --> 0 y bandera que chocó
-            break
-            
-        #distance_fitness = [0]*len(cars)
-        #Update distance traveled and fitness or remove the car
+        window.blit(track, (0,0))
+        #all_cars_vel = 0
         for i, car in enumerate(cars):
-            
-            #car.sprite.update_distance_traveled()
-            #print(car.sprite.distance_travelled)
-            #distance_fitness[i] += car.sprite.distance_travelled
-            #if distance_fitness[i] % 30 == 0:
-                #ge[i].fitness += (1 + car.sprite.distance_travelled*0.01) #Consider time and distance travelled by the car adjusted by a factor of 0.01
-            #    ge[i].fitness *= 2
-            #else:
-            #    ge[i].fitness += 1
-            
+            #all_cars_vel += car.sprite.car_velocity 
+            breaker = False
+            if car.sprite.completed_lap and car.sprite.stop:
+                #car.sprite.crashed = True
+                breaker = True
+                break
+            elif car.sprite.completed_lap:
+                ge[i].fitness *= 2
+                #print("HOLA", i, car.sprite.laps_counter)            
+
             if car.sprite.crashed:
                 car.sprite.car_velocity = 0
-                #ge[i].fitness = ge[i].fitness
-                #remove(i)
-            #elif car.llego_linea_final:
-                #Si llega la meta car.sprite.car_velocity == 0 y fitness*2
-                #pass
+                car.sprite.direction = 0
+  
             else:
-                ge[i].fitness += 1 #Only consider time metric. Ver de multiplicar por la ""inversa"" de la cantidad de pesos (mas pesos, menos fitness)
+                output = nets[i].activate(car.sprite.data())
+                if output[0] > 0.5:
+                    car.sprite.direction = 1
+                elif output[0] < -0.5:
+                    car.sprite.direction = -1
+                elif output[0] <= 0.5 and output[0] >= -0.5:
+                    car.sprite.direction = 0
                 
-
+                car.sprite.car_velocity = ((output[1] + 1) / 2) * car.sprite.max_car_velocity #output[1] scaled from tanh to [0, max_car_velocity]
+                
+                ge[i].fitness += 1 #Only consider time metric. Ver de multiplicar por la ""inversa"" de la cantidad de pesos (mas pesos, menos fitness)
+                  
+        #if all_cars_vel == 0:
+        #    breaker = True
+        
+        if breaker:
+            break     
+                
+        '''
         for i, car in enumerate(cars):
             
             #Try to use 2 outputs: (left or right) and throttle. CHANGE line in Car.drive() method
@@ -88,7 +109,7 @@ def eval_genomes(genomes, config):
             #    remove(i)
             #print(car.sprite.car_velocity)
 
-            '''
+            
             #Original using only 2 output (left, right) and a constant throttle
             output = nets[i].activate(car.sprite.data())
             if output[0] > 0.7:
@@ -98,31 +119,15 @@ def eval_genomes(genomes, config):
             if output[0] <= 0.7 and output[1] <= 0.7:
                 car.sprite.direction = 0
             
-            
-            #Try to use 3 outputs: left, right and throttle
-            output = nets[i].activate(car.sprite.data())
-            #print(output)
-
-            output_vel_scaled = ((output[2] + 1) / 2) * 6
-            print(output_vel_scaled)
-
-            if output[0] > 0.7:
-                car.sprite.direction = 1
-            if output[1] > 0.7:
-                car.sprite.direction = -1
-            if output[0] <= 0.7 and output[1] <= 0.7:
-                car.sprite.direction = 0
-            if output[2] > 0:
-                car.sprite.car_velocity = output_vel_scaled #output[2]
-            else:
-                car.sprite.car_velocity = 1
-            '''
-
+        '''    
         #UPDATE
         for car in cars:
             car.draw(window)
             car.update()
+        
+        save_best()
         pygame.display.update()
+        clock.tick(FPS)
 
 #Setup NEAT Neural Network
 def train(config_path, resume=False, resume_path=r'checkpoints\neat-checkpoint-4'):
@@ -176,15 +181,12 @@ def test(config_path):
 
         window.blit(track, (0,0))
 
-        if len(car) == 0:
-            break
-
         if car.sprite.crashed:
-            break
-                
-        '''
+            car.sprite.car_velocity = 0
+            #break               
+        
         #Try to use 2 outputs: (left or right) and throttle
-        output = nets[i].activate(car.sprite.data())
+        output = net.activate(car.sprite.data())
         if output[0] > 0.5:
             car.sprite.direction = 1
         elif output[0] < -0.5:
@@ -193,11 +195,7 @@ def test(config_path):
             car.sprite.direction = 0
         
         car.sprite.car_velocity = ((output[1] + 1) / 2) * car.sprite.max_car_velocity #output[1] scaled from tanh to [0, max_car_velocity]
-        if car.sprite.car_velocity == 0:
-            #Remove car when it stops
-            #ge[i].fitness = 0
-            remove(i)
-        #print(car.sprite.car_velocity)
+    
 
         '''
         #Original using only 2 output (left, right) and a constant throttle
@@ -208,7 +206,7 @@ def test(config_path):
             car.sprite.direction = -1
         if output[0] <= 0.7 and output[1] <= 0.7:
             car.sprite.direction = 0
-        
+        '''
         #UPDATE
         car.draw(window)
         car.update()
