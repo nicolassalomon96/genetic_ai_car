@@ -9,7 +9,7 @@ class Car(pygame.sprite.Sprite):
         self.height = self.window.get_height()
         self.original_car = car
         self.image = self.original_car
-        self.max_car_velocity = 6
+        self.max_car_velocity = 10
         self.car_velocity = 0.01
         self.car_downscaling = 0.025 #Downscaling factor to show the car on the track
 
@@ -45,7 +45,7 @@ class Car(pygame.sprite.Sprite):
             self.velocity_vector = pygame.math.Vector2(0, -0.7) #x and y velocity
             self.steering_angle = 90
 
-        self.rotation_velocity = 4
+        self.rotation_velocity = 6
         self.direction = 0 # Turn left: -1; Turn right: 1
         self.radar_angles = (-90, -45, 0, 45, 90)
         self.radars_data = []
@@ -53,6 +53,7 @@ class Car(pygame.sprite.Sprite):
         self.laps_counter = 0
         self.completed_lap = False
         self.stop = False
+        self.active_radar = True
 
         #Atributtes used for travelled distance calculation
         self.distance_travelled = 0
@@ -70,7 +71,7 @@ class Car(pygame.sprite.Sprite):
         self.drive() 
         self.rotate() 
         for radar_angle in self.radar_angles:
-            self.radar(radar_angle) 
+            self.radar(radar_angle, active=self.active_radar) 
         self.collision()
         self.lap_counter()
         self.data() 
@@ -93,7 +94,7 @@ class Car(pygame.sprite.Sprite):
                 self.crashed = True
                 #print("The car crashed")
         except:
-            print("Error: car outside of playing area")
+            #print("Error: car outside of playing area")
             self.crashed = True
                
         #Draw collision points
@@ -126,31 +127,32 @@ class Car(pygame.sprite.Sprite):
         self.image = pygame.transform.rotozoom(self.original_car, self.steering_angle, self.car_downscaling) #Image rotation
         self.rect = self.image.get_rect(center=self.rect.center) #Update car rectangle center
 
-    def radar(self, radar_angle):
-        #Get each radar measurements with a simple ray-cast algorithm    
-        lenght = 0 #Step to the object
-        x = int(self.rect.center[0])
-        y = int(self.rect.center[1])
+    def radar(self, radar_angle, active=True):
+        if active:
+            #Get each radar measurements with a simple ray-cast algorithm    
+            lenght = 0 #Step to the object
+            x = int(self.rect.center[0])
+            y = int(self.rect.center[1])
 
-        while (0 < x < self.width) and (0 < y < self.height) and (not self.window.get_at((x,y)) == pygame.Color(0,0,0)): 
-            #self.window.get_at((x,y) --> get color pixel (x,y)
-            lenght += 1
-            x = int(self.rect.center[0] + math.cos(math.radians(self.steering_angle + radar_angle)) * lenght)
-            y = int(self.rect.center[1] - math.sin(math.radians(self.steering_angle + radar_angle)) * lenght)
-      
-            #if lenght > 199:
-                #Set a max_distance to measure
-            #    break
+            while (0 < x < self.width) and (0 < y < self.height) and (not self.window.get_at((x,y)) == pygame.Color(0,0,0)): 
+                #self.window.get_at((x,y) --> get color pixel (x,y)
+                lenght += 1
+                x = int(self.rect.center[0] + math.cos(math.radians(self.steering_angle + radar_angle)) * lenght)
+                y = int(self.rect.center[1] - math.sin(math.radians(self.steering_angle + radar_angle)) * lenght)
         
-        #distance = lenght
-        distance = int(math.sqrt((x - self.rect.center[0])**2 + (y - self.rect.center[1])**2))
-        self.radars_data.append([radar_angle, distance])
+                #if lenght > 199:
+                    #Set a max_distance to measure
+                #    break
+            
+            #distance = lenght
+            distance = int(math.sqrt((x - self.rect.center[0])**2 + (y - self.rect.center[1])**2))
+            self.radars_data.append([radar_angle, distance])
         
-        #Draw radar lines
-        pygame.draw.line(self.window, (255,255,255,255), self.rect.center, (x, y), 1)
-        pygame.draw.circle(self.window, (0, 255, 0, 0), (x, y), 3)
+            #Draw radar lines
+            pygame.draw.line(self.window, (255,255,255,255), self.rect.center, (x, y), 1)
+            pygame.draw.circle(self.window, (0, 255, 0, 0), (x, y), 3)
         
-        return distance
+            return distance
     
     def data(self):
         input = [0, 0, 0, 0, 0]

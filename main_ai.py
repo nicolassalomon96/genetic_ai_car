@@ -1,4 +1,4 @@
-#AL PRESIONAR LA LETRA 'Q' FINALIZA LA GENERACIÓ, GUARDA EL MEJOR INDIVIDUO Y PASA A LA GENERACIÓN SIGUIENTE
+#AL PRESIONAR LA LETRA 'Q' FINALIZA LA GENERACIÓN, GUARDA EL MEJOR INDIVIDUO Y PASA A LA GENERACIÓN SIGUIENTE
 
 import os
 import pygame
@@ -63,11 +63,12 @@ def eval_genomes(genomes, config):
                 break
             elif car.sprite.completed_lap:
                 ge[i].fitness *= 2
-                #print("HOLA", i, car.sprite.laps_counter)            
+                print("HOLA", i, car.sprite.laps_counter)            
 
             if car.sprite.crashed:
                 car.sprite.car_velocity = 0
-                car.sprite.direction = 0 
+                car.sprite.direction = 0
+                car.sprite.active_radar = False 
             elif car.sprite.car_velocity != 0:
                 output = nets[i].activate(car.sprite.data())
                 if output[0] > 0.5:
@@ -81,6 +82,7 @@ def eval_genomes(genomes, config):
                 
                 ge[i].fitness += 1 #Only consider time metric. Ver de multiplicar por la ""inversa"" de la cantidad de pesos (mas pesos, menos fitness)
             else:
+                car.sprite.active_radar = False 
                 car.sprite.direction = 0
         if breaker:
             break     
@@ -126,7 +128,7 @@ def eval_genomes(genomes, config):
         clock.tick(FPS)
 
 #Setup NEAT Neural Network
-def train(config_path, resume=False, resume_path=r'checkpoints\neat-checkpoint-12'):
+def train(config_path, resume=False, resume_path=r'checkpoints\neat-checkpoint-12', generations=10):
     global pop
     config = neat.config.Config(
         neat.DefaultGenome,
@@ -146,7 +148,7 @@ def train(config_path, resume=False, resume_path=r'checkpoints\neat-checkpoint-1
     pop.add_reporter(stats)
     pop.add_reporter(neat.Checkpointer(1, filename_prefix=r'checkpoints\neat-checkpoint-'))
 
-    best = pop.run(eval_genomes, 10)
+    best = pop.run(eval_genomes, generations)
     with open("best.pickle", "wb") as f:
         pickle.dump(best, f)
     #print(winner)
@@ -181,6 +183,7 @@ def test(config_path):
 
         if car.sprite.crashed:
             car.sprite.car_velocity = 0
+            car.sprite.direction = 0
             #break               
         else:
             #Try to use 2 outputs: (left or right) and throttle
@@ -208,6 +211,7 @@ if __name__ == '__main__':
     parser.add_argument('track', type=int, help ='Select the track: 1 - 5')
     parser.add_argument('type', type=str, help = 'Train or Test mode')
     parser.add_argument('--resume', type=str, help = 'Resume from checkpoint')
+    parser.add_argument('--generations', type=int, help = 'Number of total generations')
     args = parser.parse_args()
 
     ############################### GAME WINDOW ##############################
@@ -220,6 +224,6 @@ if __name__ == '__main__':
     pygame.display.set_caption("GENETIC AI CAR")
 
     if args.type == 'train':
-        train(config_path, resume=args.resume)
+        train(config_path, resume=args.resume, generations=args.generations)
     elif args.type == 'test':
         test(config_path)
