@@ -9,20 +9,20 @@ class Car(pygame.sprite.Sprite):
         self.height = self.window.get_height()
         self.original_car = car
         self.image = self.original_car
-        self.max_car_velocity = 10
+        self.max_car_velocity = 6
         self.car_velocity = 0.01
         self.car_downscaling = 0.025 #Downscaling factor to show the car on the track
 
         #Rotate and place the car according to track finish line orientation
         if track_number == 1:
             self.init_pos = (536, 553)
-            self.finish_line_crossed_threshold = [(45, 35), (60, 60)]
+            self.finish_line_crossed_threshold = [(-45, -40), (-60, 60)]
             self.rect = self.image.get_rect(center=self.init_pos)
             self.velocity_vector = pygame.math.Vector2(0.7, 0) #x and y velocity
             self.steering_angle = 0
         elif track_number == 2:
             self.init_pos = (195, 263)
-            self.finish_line_threshold = [(60, 60), (25, 20)]
+            self.finish_line_crossed_threshold = [(-60, 60), (20, 25)]
             self.rect = self.image.get_rect(center=self.init_pos)
             self.velocity_vector = pygame.math.Vector2(0, -0.7) #x and y velocity
             self.steering_angle = 90
@@ -42,7 +42,7 @@ class Car(pygame.sprite.Sprite):
             self.velocity_vector = pygame.math.Vector2(0, -0.7) #x and y velocity
             self.steering_angle = 90
 
-        self.rotation_velocity = 3
+        self.rotation_velocity = 4
         self.direction = 0 # Turn left: -1; Turn right: 1
         self.radar_angles = (-90, -45, 0, 45, 90)
         self.radars_data = []
@@ -98,13 +98,16 @@ class Car(pygame.sprite.Sprite):
         pygame.draw.circle(self.window, (0, 255, 255, 0), left_collition_point, 3)
 
     def lap_counter(self):
-
             car_pos = self.rect.center
-            if (self.init_pos[0]-self.finish_line_crossed_threshold[0][0] < car_pos[0] < self.init_pos[0]-self.finish_line_crossed_threshold[0][1]) \
-                    and (self.init_pos[1]-self.finish_line_crossed_threshold[1][0] < car_pos[1] < self.init_pos[1]+self.finish_line_crossed_threshold[1][1]):
+            #print(car_pos)
+            #print(self.init_pos[0]+self.finish_line_crossed_threshold[0][0], self.init_pos[0]+self.finish_line_crossed_threshold[0][1])
+            #print(self.init_pos[1]+self.finish_line_crossed_threshold[1][0], self.init_pos[1]+self.finish_line_crossed_threshold[1][1])
+            #sys.exit()
+            if (self.init_pos[0]+self.finish_line_crossed_threshold[0][0] < car_pos[0] < self.init_pos[0]+self.finish_line_crossed_threshold[0][1]) \
+                    and (self.init_pos[1]+self.finish_line_crossed_threshold[1][0] < car_pos[1] < self.init_pos[1]+self.finish_line_crossed_threshold[1][1]):
                 self.completed_lap = True
                 self.laps_counter += 1
-                if self.laps_counter == 3:
+                if self.laps_counter == 2:
                     self.stop = True
 
     def rotate(self):

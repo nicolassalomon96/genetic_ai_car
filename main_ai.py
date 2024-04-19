@@ -67,9 +67,8 @@ def eval_genomes(genomes, config):
 
             if car.sprite.crashed:
                 car.sprite.car_velocity = 0
-                car.sprite.direction = 0
-  
-            else:
+                car.sprite.direction = 0 
+            elif car.sprite.car_velocity != 0:
                 output = nets[i].activate(car.sprite.data())
                 if output[0] > 0.5:
                     car.sprite.direction = 1
@@ -81,7 +80,8 @@ def eval_genomes(genomes, config):
                 car.sprite.car_velocity = ((output[1] + 1) / 2) * car.sprite.max_car_velocity #output[1] scaled from tanh to [0, max_car_velocity]
                 
                 ge[i].fitness += 1 #Only consider time metric. Ver de multiplicar por la ""inversa"" de la cantidad de pesos (mas pesos, menos fitness)
-        
+            else:
+                car.sprite.direction = 0
         if breaker:
             break     
                 
@@ -126,7 +126,7 @@ def eval_genomes(genomes, config):
         clock.tick(FPS)
 
 #Setup NEAT Neural Network
-def train(config_path, resume=False, resume_path=r'checkpoints\neat-checkpoint-4'):
+def train(config_path, resume=False, resume_path=r'checkpoints\neat-checkpoint-12'):
     global pop
     config = neat.config.Config(
         neat.DefaultGenome,
@@ -146,10 +146,12 @@ def train(config_path, resume=False, resume_path=r'checkpoints\neat-checkpoint-4
     pop.add_reporter(stats)
     pop.add_reporter(neat.Checkpointer(1, filename_prefix=r'checkpoints\neat-checkpoint-'))
 
-    best = pop.run(eval_genomes, 50)
+    best = pop.run(eval_genomes, 10)
     with open("best.pickle", "wb") as f:
         pickle.dump(best, f)
     #print(winner)
+
+
 
 def test(config_path):
     with open("best.pickle", "rb") as f:
@@ -168,47 +170,35 @@ def test(config_path):
 
     car = pygame.sprite.GroupSingle(Car(red_car, window, track_number))
     net = neat.nn.FeedForwardNetwork.create(best, config)
-       
+    clock = pygame.time.Clock()
     run = True
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False #End the generation when closing the window
-
+        
         window.blit(track, (0,0))
 
         if car.sprite.crashed:
             car.sprite.car_velocity = 0
             #break               
-        
-        #Try to use 2 outputs: (left or right) and throttle
-        output = net.activate(car.sprite.data())
-        if output[0] > 0.5:
-            car.sprite.direction = 1
-        elif output[0] < -0.5:
-            car.sprite.direction = -1
-        elif output[0] <= 0.5 and output[0] >= -0.5:
-            car.sprite.direction = 0
-        
-        car.sprite.car_velocity = ((output[1] + 1) / 2) * car.sprite.max_car_velocity #output[1] scaled from tanh to [0, max_car_velocity]
-    
+        else:
+            #Try to use 2 outputs: (left or right) and throttle
+            output = net.activate(car.sprite.data())
+            if output[0] > 0.5:
+                car.sprite.direction = 1
+            elif output[0] < -0.5:
+                car.sprite.direction = -1
+            elif -0.5 <= output[0] <= 0.5:
+                car.sprite.direction = 0
+            
+            car.sprite.car_velocity = ((output[1] + 1) / 2) * car.sprite.max_car_velocity #output[1] scaled from tanh to [0, max_car_velocity]
 
-        '''
-        #Original using only 2 output (left, right) and a constant throttle
-        output = net.activate(car.sprite.data())
-        if output[0] > 0.7:
-            car.sprite.direction = 1
-        if output[1] > 0.7:
-            car.sprite.direction = -1
-        if output[0] <= 0.7 and output[1] <= 0.7:
-            car.sprite.direction = 0
-        '''
         #UPDATE
         car.draw(window)
         car.update()
         pygame.display.update()
-
-
+        clock.tick(FPS)
 
 if __name__ == '__main__':
     local_dir = os.path.dirname(__file__)
@@ -217,6 +207,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('track', type=int, help ='Select the track: 1 - 5')
     parser.add_argument('type', type=str, help = 'Train or Test mode')
+    parser.add_argument('--resume', type=str, help = 'Resume from checkpoint')
     args = parser.parse_args()
 
     ############################### GAME WINDOW ##############################
@@ -229,6 +220,6 @@ if __name__ == '__main__':
     pygame.display.set_caption("GENETIC AI CAR")
 
     if args.type == 'train':
-        train(config_path, resume=False)
+        train(config_path, resume=args.resume)
     elif args.type == 'test':
         test(config_path)
