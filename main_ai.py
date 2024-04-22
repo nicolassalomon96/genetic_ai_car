@@ -8,7 +8,10 @@ from car_ai import Car
 import pickle
 import argparse
 
-FPS = 60
+FPS = 120
+pygame.init() 
+font = pygame.font.Font(None, 32)
+current_gen = 0
 
 def remove(index):
     cars.pop(index)
@@ -21,11 +24,12 @@ def save_best():
         pickle.dump(best, f)
 
 def eval_genomes(genomes, config):
-    global cars, ge, nets
+    global cars, ge, nets, current_gen, stopped_cars
 
     cars = []
     ge = []
     nets = []
+    fitness = []
 
     for genome_id, genome in genomes:
         cars.append(pygame.sprite.GroupSingle(Car(red_car, window, track_number)))
@@ -51,10 +55,10 @@ def eval_genomes(genomes, config):
         keyState = pygame.key.get_pressed()   
         if keyState[pygame.K_q]:
             pygame.time.wait(500)
+            current_gen += 1
             run = False
         pygame.event.pump() # process event queue
-
-        window.blit(track, (0,0))
+    
         for i, car in enumerate(cars):
             breaker = False
             if car.sprite.completed_lap and car.sprite.stop:
@@ -63,7 +67,8 @@ def eval_genomes(genomes, config):
                 break
             elif car.sprite.completed_lap:
                 ge[i].fitness *= 2
-                print("HOLA", i, car.sprite.laps_counter)            
+                #pygame.time.wait(100) 
+                print(f"Car: {i}, Laps: {car.sprite.laps_counter}")            
 
             if car.sprite.crashed:
                 car.sprite.car_velocity = 0
@@ -81,48 +86,38 @@ def eval_genomes(genomes, config):
                 car.sprite.car_velocity = ((output[1] + 1) / 2) * car.sprite.max_car_velocity #output[1] scaled from tanh to [0, max_car_velocity]
                 
                 ge[i].fitness += 1 #Only consider time metric. Ver de multiplicar por la ""inversa"" de la cantidad de pesos (mas pesos, menos fitness)
+                fitness.append(ge[i].fitness)
             else:
                 car.sprite.active_radar = False 
                 car.sprite.direction = 0
         if breaker:
+            current_gen += 1
             break     
-                
-        '''
-        for i, car in enumerate(cars):
-            
-            #Try to use 2 outputs: (left or right) and throttle. CHANGE line in Car.drive() method
-            output = nets[i].activate(car.sprite.data())
-            if output[0] > 0.5:
-                car.sprite.direction = 1
-            elif output[0] < -0.5:
-                car.sprite.direction = -1
-            elif output[0] <= 0.5 and output[0] >= -0.5:
-                car.sprite.direction = 0
-            
-            if not car.sprite.crashed:
-                car.sprite.car_velocity = ((output[1] + 1) / 2) * car.sprite.max_car_velocity #output[1] scaled from tanh to [0, max_car_velocity]
-            #if car.sprite.car_velocity == 0:
-                #Remove car when it stops
-                #ge[i].fitness = 0
-            #    remove(i)
-            #print(car.sprite.car_velocity)
-
-            
-            #Original using only 2 output (left, right) and a constant throttle
-            output = nets[i].activate(car.sprite.data())
-            if output[0] > 0.7:
-                car.sprite.direction = 1
-            if output[1] > 0.7:
-                car.sprite.direction = -1
-            if output[0] <= 0.7 and output[1] <= 0.7:
-                car.sprite.direction = 0
-            
-        '''    
+        
         #UPDATE
+        stopped_cars = 0        
+        window.blit(track, (0,0))
+        
         for car in cars:
             car.draw(window)
             car.update()
-        
+
+            if not car.sprite.active_radar:
+                stopped_cars += 1
+
+        text_1 = font.render(f'Mode: Train', True, (0,0,0), (255,255,255))
+        text_2 = font.render(f'Generation:{current_gen}', True, (0,0,0), (255,255,255))
+        text_3 = font.render(f'Alive:{len(cars)-stopped_cars} - Dead:{stopped_cars}', True, (0,0,0), (255,255,255))
+        text_4 = font.render(f'Best fitness:{max(fitness)}', True, (0,0,0), (255,255,255))
+        window.blit(text_1, (20,750))
+        window.blit(text_2, (20,775))
+        window.blit(text_3, (20,800))
+        window.blit(text_4, (20,825))
+    
+        if stopped_cars == len(cars):
+            current_gen += 1
+            break
+       
         save_best()
         pygame.display.update()
         clock.tick(FPS)
@@ -152,7 +147,6 @@ def train(config_path, resume=False, resume_path=r'checkpoints\neat-checkpoint-1
     with open("best.pickle", "wb") as f:
         pickle.dump(best, f)
     #print(winner)
-
 
 
 def test(config_path):
@@ -200,6 +194,9 @@ def test(config_path):
         #UPDATE
         car.draw(window)
         car.update()
+        
+        text_1 = font.render(f'Mode: Test', True, (0,0,0), (255,255,255))
+        window.blit(text_1, (20,750))
         pygame.display.update()
         clock.tick(FPS)
 

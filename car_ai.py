@@ -9,7 +9,7 @@ class Car(pygame.sprite.Sprite):
         self.height = self.window.get_height()
         self.original_car = car
         self.image = self.original_car
-        self.max_car_velocity = 10
+        self.max_car_velocity = 6
         self.car_velocity = 0.01
         self.car_downscaling = 0.025 #Downscaling factor to show the car on the track
 
@@ -49,21 +49,20 @@ class Car(pygame.sprite.Sprite):
         self.direction = 0 # Turn left: -1; Turn right: 1
         self.radar_angles = (-90, -45, 0, 45, 90)
         self.radars_data = []
-        self.crashed = False
-        self.laps_counter = 0
+        self.crashed = False #Flag to measure if the car has crashed
+        self.laps_counter = 0 
         self.completed_lap = False
-        self.stop = False
-        self.active_radar = True
+        self.stop = False #Flag to measure if 2 laps were done
+        self.active_radar = True #Flag to activate or not the radar measurement
 
         #Atributtes used for travelled distance calculation
-        self.distance_travelled = 0
-        self.prev_pos_x = int(self.rect.center[0])
-        self.prev_pos_y =  int(self.rect.center[1])
+        #self.distance_travelled = 0
+        #self.prev_pos_x = int(self.rect.center[0])
+        #self.prev_pos_y =  int(self.rect.center[1])
 
     def reset(self):
         self.completed_lap = False
-        self.radars_data.clear() #Clean radars data
-    
+        self.radars_data.clear() #Clean radars data   
     
     def update(self):
         #Update the state of each car every loop
@@ -74,6 +73,7 @@ class Car(pygame.sprite.Sprite):
             self.radar(radar_angle, active=self.active_radar) 
         self.collision()
         self.lap_counter()
+        #self.update_distance_traveled()
         self.data() 
 
     def drive(self):
