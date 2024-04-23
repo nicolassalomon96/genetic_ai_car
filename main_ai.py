@@ -1,5 +1,7 @@
 #AL PRESIONAR LA LETRA 'Q' FINALIZA LA GENERACIÓN, GUARDA EL MEJOR INDIVIDUO Y PASA A LA GENERACIÓN SIGUIENTE
 
+#MEJORAR LA DETECCIÓN DE BORDES PORQUE EN TRACK 4 POR EJEMPLO NO DETECTA BIEN: HAY QUE HACER LOS BORDES MAS GRUESOS Y NEGROS
+
 import os
 import pygame
 import neat
@@ -8,7 +10,7 @@ from car_ai import Car
 import pickle
 import argparse
 
-FPS = 120
+FPS = 60
 pygame.init() 
 font = pygame.font.Font(None, 32)
 current_gen = 0
@@ -61,20 +63,25 @@ def eval_genomes(genomes, config):
     
         for i, car in enumerate(cars):
             breaker = False
-            if car.sprite.completed_lap and car.sprite.stop:
+            if car.sprite.completed_lap:# and car.sprite.stop:
                 #car.sprite.crashed = True
-                breaker = True
-                break
-            elif car.sprite.completed_lap:
+                #breaker = True
+                #break
+            #elif car.sprite.completed_lap:
                 ge[i].fitness *= 2
                 #pygame.time.wait(100) 
-                print(f"Car: {i}, Laps: {car.sprite.laps_counter}")            
+                print(f"Car: {i}, Laps: {car.sprite.laps_counter}")
+                if car.sprite.laps_counter == 2:
+                    breaker = True
+                    break            
 
             if car.sprite.crashed:
                 car.sprite.car_velocity = 0
                 car.sprite.direction = 0
                 car.sprite.active_radar = False 
+
             elif car.sprite.car_velocity != 0:
+            #else:
                 output = nets[i].activate(car.sprite.data())
                 if output[0] > 0.5:
                     car.sprite.direction = 1
@@ -85,11 +92,13 @@ def eval_genomes(genomes, config):
                 
                 car.sprite.car_velocity = ((output[1] + 1) / 2) * car.sprite.max_car_velocity #output[1] scaled from tanh to [0, max_car_velocity]
                 
-                ge[i].fitness += 1 #Only consider time metric. Ver de multiplicar por la ""inversa"" de la cantidad de pesos (mas pesos, menos fitness)
+                ge[i].fitness += car.sprite.distance_travelled/100  #Only consider time metric. Ver de multiplicar por la ""inversa"" de la cantidad de pesos (mas pesos, menos fitness)
+                                                                    #Considering the distance travelled we avoid a car turning around itself and increasing its fitness
                 fitness.append(ge[i].fitness)
             else:
-                car.sprite.active_radar = False 
-                car.sprite.direction = 0
+                car.sprite.crashed = True
+                #car.sprite.active_radar = False 
+                #car.sprite.direction = 0
         if breaker:
             current_gen += 1
             break     
@@ -97,7 +106,7 @@ def eval_genomes(genomes, config):
         #UPDATE
         stopped_cars = 0        
         window.blit(track, (0,0))
-        
+
         for car in cars:
             car.draw(window)
             car.update()
@@ -108,11 +117,11 @@ def eval_genomes(genomes, config):
         text_1 = font.render(f'Mode: Train', True, (0,0,0), (255,255,255))
         text_2 = font.render(f'Generation:{current_gen}', True, (0,0,0), (255,255,255))
         text_3 = font.render(f'Alive:{len(cars)-stopped_cars} - Dead:{stopped_cars}', True, (0,0,0), (255,255,255))
-        text_4 = font.render(f'Best fitness:{max(fitness)}', True, (0,0,0), (255,255,255))
-        window.blit(text_1, (20,750))
-        window.blit(text_2, (20,775))
-        window.blit(text_3, (20,800))
-        window.blit(text_4, (20,825))
+        text_4 = font.render(f'Best fitness:{int(max(fitness))}', True, (0,0,0), (255,255,255))
+        window.blit(text_1, (int(window.get_width()*0.02), int(window.get_height()*0.75)))
+        window.blit(text_2, (int(window.get_width()*0.02), int(window.get_height()*0.79)))
+        window.blit(text_3, (int(window.get_width()*0.02), int(window.get_height()*0.83)))
+        window.blit(text_4, (int(window.get_width()*0.02), int(window.get_height()*0.87)))
     
         if stopped_cars == len(cars):
             current_gen += 1
