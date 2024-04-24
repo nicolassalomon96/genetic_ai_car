@@ -22,7 +22,7 @@ def remove(index):
 
 def save_best():
     best = pop.best_genome
-    with open("best.pickle", "wb") as f:
+    with open(r"checkpoints\best.pickle", "wb") as f:
         pickle.dump(best, f)
 
 def eval_genomes(genomes, config):
@@ -47,10 +47,7 @@ def eval_genomes(genomes, config):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 #run = False #End the generation when closing the window 
-                best = pop.best_genome #Ver como guardar los pesos al cerrar la ventana
-                with open("best.pickle", "wb") as f:
-                    pickle.dump(best, f)
-                #print(f'Best saved: {best}')
+                save_best()
                 quit() #End the program when closing the window
 
         #When pressing 'q', finish the current generation, save the state into a .pickle and begins a new generation
@@ -159,9 +156,10 @@ def train(config_path, resume=False, resume_path=r'checkpoints\neat-checkpoint-1
 
 
 def test(config_path):
-    with open("best.pickle", "rb") as f:
+    with open(r"checkpoints\best.pickle", "rb") as f:
         best = pickle.load(f)
-    #print(best)
+    print("Best model:")
+    print(best)
     config = neat.config.Config(
         neat.DefaultGenome,
         neat.DefaultReproduction,

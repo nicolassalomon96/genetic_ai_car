@@ -34,13 +34,13 @@ class Car(pygame.sprite.Sprite):
             self.steering_angle = 0
         elif track_number == 4:
             self.init_pos = (318, 81)
-            self.finish_line_crossed_threshold = [(-45, -40), (-50, 50)]
+            self.finish_line_crossed_threshold = [(-20, 0), (-50, 50)]
             self.rect = self.image.get_rect(center=self.init_pos)
             self.velocity_vector = pygame.math.Vector2(0.7, 0) #x and y velocity
             self.steering_angle = 0
         elif track_number == 5:
             self.init_pos = (78, 302)
-            self.finish_line_crossed_threshold = [(-50, 50), (20, 25)]
+            self.finish_line_crossed_threshold = [(-50, 50), (10, 25)]
             self.rect = self.image.get_rect(center=self.init_pos)
             self.velocity_vector = pygame.math.Vector2(0, -0.7) #x and y velocity
             self.steering_angle = 90
