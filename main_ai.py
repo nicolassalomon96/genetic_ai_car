@@ -10,7 +10,7 @@ from car_ai import Car
 import pickle
 import argparse
 
-FPS = 60
+FPS = 120
 pygame.init() 
 font = pygame.font.Font(None, 32)
 current_gen = 0
@@ -22,6 +22,7 @@ def remove(index):
 
 def save_best():
     best = pop.best_genome
+    print(f'Best genome: {best}')
     with open(r"checkpoints\best.pickle", "wb") as f:
         pickle.dump(best, f)
 
@@ -96,8 +97,10 @@ def eval_genomes(genomes, config):
                 car.sprite.crashed = True
                 #car.sprite.active_radar = False 
                 #car.sprite.direction = 0
+        
         if breaker:
             current_gen += 1
+            save_best()
             break     
         
         #UPDATE
@@ -124,7 +127,7 @@ def eval_genomes(genomes, config):
             current_gen += 1
             break
        
-        save_best()
+        #save_best()
         pygame.display.update()
         clock.tick(FPS)
 

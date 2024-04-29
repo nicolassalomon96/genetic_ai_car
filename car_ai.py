@@ -9,7 +9,7 @@ class Car(pygame.sprite.Sprite):
         self.height = self.window.get_height()
         self.original_car = car
         self.image = self.original_car
-        self.max_car_velocity = 10
+        self.max_car_velocity = 6
         self.car_velocity = 0.01
         self.car_downscaling = 0.025 #Downscaling factor to show the car on the track
 
@@ -20,7 +20,7 @@ class Car(pygame.sprite.Sprite):
             self.rect = self.image.get_rect(center=self.init_pos)
             self.velocity_vector = pygame.math.Vector2(0.7, 0) #x and y velocity
             self.steering_angle = 0
-        elif track_number == 2:
+        elif track_number == 2 or track_number == 6 or track_number == 7:
             self.init_pos = (195, 263)
             self.finish_line_crossed_threshold = [(-50, 50), (0, 15)]
             self.rect = self.image.get_rect(center=self.init_pos)
@@ -47,7 +47,7 @@ class Car(pygame.sprite.Sprite):
 
         self.rotation_velocity = 6
         self.direction = 0 # Turn left: -1; Turn right: 1
-        self.radar_angles = (-60, -30, 0, 30, 60)#(-90, -45, 0, 45, 90)
+        self.radar_angles = (-60, -30, 0, 30, 60) #(-120, -90, -45, 0, 45, 90, 120) #(-120, -45, 0, 45, 120)#(-60, -30, 0, 30, 60)#(-90, -45, 0, 45, 90)
         self.radars_data = []
         self.crashed = False #Flag to measure if the car has crashed
         self.laps_counter = 0
@@ -173,7 +173,7 @@ class Car(pygame.sprite.Sprite):
             return distance
     
     def data(self):
-        input = [0, 0, 0, 0, 0]
+        input = [0] * len(self.radar_angles) #[0, 0, 0, 0, 0]
         for i, radar in enumerate(self.radars_data):
             input[i] = int(radar[1])
         return input
